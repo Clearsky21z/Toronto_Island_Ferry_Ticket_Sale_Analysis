@@ -23,7 +23,7 @@ resources <- list_package_resources("toronto-island-ferry-ticket-counts")
 datastore_resources <- filter(resources, tolower(format) %in% c('csv', 'geojson'))
 
 # Load the first datastore resource (CSV format)
-the_raw_data <- filter(datastore_resources, row_number() == 1) %>% get_resource()
+the_raw_data <- filter(datastore_resources, row_number() == 2) %>% get_resource()
 
 #### Save data ####
 # Save the downloaded data to the raw_data folder
