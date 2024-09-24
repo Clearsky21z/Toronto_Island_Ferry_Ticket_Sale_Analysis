@@ -1,13 +1,12 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Analyzing Temporal Patterns and Passenger Flow in Toronto Island Ferry Ticket Sales"
+subtitle: "A Time Series Approach"
 author: 
   - John Zhang
-  - Another author
-thanks: "Code and data are available at: LINK."
+thanks: "Code and data are available at: https://github.com/Clearsky21z/Toronto_Island_Ferry_Ticket_Sale_Analysis."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This paper analyzes Toronto Island ferry ticket sales over a specific period, focusing on time series patterns and passenger flow trends. By examining both sales and redemptions data at 15-minute intervals, we uncover daily and seasonal trends in ferry usage. These insights can help optimize ferry operations and enhance visitor experience. The analysis highlights peak times of demand and usage variations over different seasons."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -19,6 +18,26 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
+library(opendatatoronto)
+library(knitr)
+library(lubridate)
+library(ggplot2)
+
+#### Load the dataset ####
+raw_data <- read_csv(here::here("data/raw_data/unedited_ferry_ticket_counts.csv"))
+validated_data <- read_csv(here::here("data/analysis_data/validated_ferry_ticket_counts.csv"))
+
+#### Extract year, month, and day of the week for trend analysis ####
+validated_data <- validated_data %>%
+  mutate(
+    date = as_date(timestamp),
+    year = year(date),
+    month = month(date, label = TRUE),
+    week = week(date),
+    day_of_week = wday(date, label = TRUE),
+    hour = hour(timestamp)
+  )
+
 ```
 
 
@@ -26,130 +45,216 @@ library(tidyverse)
 
 You can and should cross-reference sections and sub-sections. We use @citeR and @rohan.
 
-The remainder of this paper is structured as follows. @sec-data....
+Toronto Island Park is a popular recreational destination for residents and tourists alike, situated in Lake Ontario just off the coast of downtown Toronto. Accessible primarily via ferries, the park includes several islands such as Centre Island, Hanlan’s Point, and Ward’s Island. These islands offer a variety of activities, including beaches, nature reserves, trails, and historical landmarks like the Gibraltar Point Lighthouse. The park’s popularity peaks during the summer months, when visitors flock to its beaches and recreational facilities.
 
+Ferry transportation to and from the islands is operated year-round by the Jack Layton Ferry Terminal. Passengers can purchase ferry tickets either online or at point-of-sale (POS) kiosks at the terminal, with the tickets covering both the outbound and return journeys. Online ticket holders benefit from separate boarding lines during peak times, which helps ease congestion. Although ferries run throughout the year, demand is highest on weekends, holidays, and during the summer months, with the busiest travel periods typically between 10 a.m. and 2 p.m. for trips to the islands and from 5:30 p.m. to 9 p.m. for return trips to the city. The ferry route from Centre Island sees the most traffic, and wait times for the return trip can exceed an hour during peak periods.
+
+Given the significant variation in ferry demand throughout the year and at different times of the day, analyzing ferry ticket sales data provides valuable insights into temporal patterns of ferry usage. Understanding these patterns can help optimize ferry schedules, manage peak loads, and improve the overall passenger experience. This paper uses time series analysis to investigate ferry ticket sales and redemptions, exploring daily, weekly, and monthly trends, seasonal patterns, peak usage times, and the busiest days of the year.
+
+The remainder of the paper is structured as follows. @sec-data introduces the dataset and its source, as well as key variables used in the analysis. @sec-result presents the findings from the time series analysis, including trend detection, seasonality, and peak times of usage. @sec-disc provides a discussion of these results, highlighting key insights and offering suggestions for future work.
 
 
 # Data {#sec-data}
+The dataset for this analysis was obtained from Open Data Toronto, which provides real-time ferry ticket sales and redemption counts for the Toronto Island Ferry system. The data covers ticket sales and redemptions at 15-minute intervals, including both online and point-of-sale (POS) kiosk sales. It contains information on ferry activity to and from Centre Island, Hanlan’s Point, and Ward’s Island. This dataset is particularly valuable for understanding ferry demand patterns and optimizing operations to meet passenger flow during peak times.
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+## Raw Data
+The raw dataset starts from July 2015 and continues to the most recent available date. For the purpose of this analysis, I focused on complete years of data between 2016 and 2023, to avoid incomplete yearly trends. The original raw dataset consists of four columns:
 
-```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
-#| echo: false
+1. X_id: An identifier for each record.
+2. Timestamp: The date and time when the ferry transaction was recorded, stored at 15-minute intervals.
+3. Redemption_Count: The number of ferry tickets redeemed in each 15-minute interval.
+4. Sales_Count: The number of ferry tickets sold in each 15-minute interval.
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
-
-Talk more about it.
-
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+@tbl-table1 is a sample of the raw data using head() to show the structure and contents of the dataset. As seen, each row represents the ferry ticket activity for a specific 15-minute interval, showing the timestamp, number of redemptions, and the number of sales.
 
 ```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
 #| echo: false
 #| warning: false
 #| message: false
+#| label: tbl-table1
+#| tbl-cap: Sample of Raw Data
+raw_data_sample <- head(raw_data)
+kable(
+  raw_data_sample,
+  col.names = c("X_id", "Timestamp", "Redemption_Count", "Sales_Count"),
+  caption = "Sample of Raw Data"
+)
 
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
 ```
 
-Talk way more about it. 
 
+## Modifications and Reasoning
+### Filtering for Full-Year Data (2016-2023)
+To provide a more comprehensive analysis and to avoid the issues that arise from incomplete data, such as partially recorded years, I filtered the dataset to include only the full-year data from 2016 to 2023. This allows for more consistent year-over-year comparisons and avoids the distortion of trends that could result from partial data (e.g., incomplete months in 2015 or the current year).
 
+### Adding a "Total Sales" Column
+In the original dataset, sales and redemption data were recorded in separate columns, which made it harder to quickly assess the total ferry ticket activity. To streamline the analysis, I created an additional column called Total_Sales, which is simply the sum of Redemption_Count and Sales_Count. This new column allows for faster aggregate comparisons and simplifies the time series analysis.
 
-# Model
+### Extracting Date Components from Timestamps
+To facilitate time series analysis, I extracted several useful features from the Timestamp column, such as year, month, week, day of the week, and hour. These features allow for granular analysis of patterns over time, including daily, weekly, and seasonal trends. This extraction makes it easier to analyze peak times and demand variations by breaking down the timestamp into relevant components.
 
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
-
-## Model set-up
-
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
-
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
-
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
-
-
-### Model justification
-
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
-
-We can use maths by including latex between dollar signs, for instance $\theta$.
-
-
-# Results
-
-Our results are summarized in @tbl-modelresults.
-
+@tbl-table2 shows a sample of modified data.
 ```{r}
 #| echo: false
-#| eval: true
 #| warning: false
 #| message: false
+#| label: tbl-table2
+#| tbl-cap: Sample of Modified Data
 
-library(rstanarm)
+modified_data_sample <- head(validated_data)
 
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
-```
 
-```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
-
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
+kable(
+  modified_data_sample,
+  col.names = c("ID", "Timestamp", "Redemption Count", "Sales Count", "Total Sales", "Date", "Year", "Month", "Week", "Day of Week", "Hour"),
+  caption = "Sample of Modified Data with Total Sales and Time Features"
 )
 ```
 
 
+# Result {#sec-result}
+## Trend Detection: Daily/Monthly Patterns and Seasonality Analysis
+Analyzing daily ferry ticket sales provides insight into visitor flow over the course of a year. As shown in @fig-figure1, ticket sales for the year 2023 tend to peak during weekends, highlighting the demand for ferry services during leisure periods. Additionally, @fig-figure2 illustrates the monthly sales trend, where ferry ticket sales are highest during the summer months (July and August), which corresponds to peak tourist season.
+The seasonal variation in ferry usage is clearly visible in the monthly trends, with significant spikes in demand during the summer months. This seasonality reflects both local and tourist demand for access to the Toronto Islands during warmer weather. Additionally, holidays, including long weekends, show increased ferry traffic.
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| label: fig-figure1
+#| fig-cap: Daily Ferry Ticket Sales in 2023
+
+#### Daily Sales Summarization ####
+#### Filter for the year 2023 ####
+validated_data_2023 <- validated_data %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(year(date) == 2023)
+
+#### Summarize daily sales for 2023 ####
+daily_sales_2023 <- validated_data_2023 %>%
+  group_by(date) %>%
+  summarize(total_sales = sum(total_sales))
+
+#### Plot daily sales trend for 2023 with custom x-axis labels ####
+ggplot(daily_sales_2023, aes(x = date, y = total_sales)) +
+  geom_line(color = "blue") +
+  labs(title = "Daily Ferry Ticket Sales in 2023", x = "Date", y = "Total Sales") +
+  scale_x_date(
+    breaks = as.Date(c("2023-01-01", "2023-04-01", "2023-07-01", "2023-10-01", "2023-12-31")),
+    labels = c("Jan 2023", "Apr 2023", "Jul 2023", "Oct 2023", "Dec 2023")
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| label: fig-figure2
+#| fig-cap: Monthly Trends in Ferry Ticket Sales
+
+#### Monthly Seasonality - Aggregating by month ####
+monthly_sales <- validated_data %>%
+  group_by(year, month) %>%
+  summarise(total_sales = sum(total_sales))
+
+ggplot(monthly_sales, aes(x = month, y = total_sales, group = year, color = factor(year))) +
+  geom_line(size = 1) +
+  theme_minimal() +
+  labs(title = "Monthly Trends in Ferry Ticket Sales",
+       x = "Month",
+       y = "Total Sales") +
+  scale_color_brewer(palette = "Set1", name = "Year")
+```
+
+## Passenger Flow: Peak Time Identification
+The analysis of peak times reveals the busiest hours for ferry ticket sales, which are typically concentrated in the late morning to early afternoon @fig-figure3. These insights can assist ferry operators in planning for peak loads and adjusting schedules accordingly to reduce wait times and improve the overall passenger experience.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| label: fig-figure3
+#| fig-cap: Hourly Ferry Ticket Sales
+#### Hourly Sales (Peak Time Identification) ####
+# Summarize hourly sales
+hourly_sales <- validated_data %>%
+  group_by(hour) %>%
+  summarize(total_sales = sum(total_sales))
+
+# Plot hourly sales trend
+ggplot(hourly_sales, aes(x = hour, y = total_sales)) +
+  geom_line(color = "darkgreen") +
+  labs(title = "Hourly Ferry Ticket Sales", x = "Hour of the Day", y = "Total Sales") +
+  theme_minimal()
+```
+
+## Day-of-Week Analysis
+@fig-figure4 shows that weekends consistently see higher ferry ticket sales than weekdays, with peak demand on Saturdays and Sundays. This pattern is consistent across all years in the dataset, reinforcing the importance of scheduling and staffing adjustments on weekends to meet the heightened demand.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| label: fig-figure4
+#| fig-cap: Ferry Ticket Sales by Day of the Week
+
+#### Day of Week Analysis ####
+# Summarize sales by day of the week
+weekly_sales <- validated_data %>%
+  group_by(day_of_week) %>%
+  summarize(total_sales = sum(total_sales))
+
+# Plot sales by day of the week
+ggplot(weekly_sales, aes(x = day_of_week, y = total_sales)) +
+  geom_bar(stat = "identity", fill = "orange") +
+  labs(title = "Ferry Ticket Sales by Day of the Week", x = "Day of the Week", y = "Total Sales") +
+  theme_minimal()
+```
+
+## Peak Day Analysis
+This analysis highlights the specific days with the highest ferry ticket sales for each year in the dataset. @tbl-table3 presents the peak days for each year based on total sales. These peaks typically align with holidays, long weekends, or major summer events, further emphasizing the need for operational planning during these periods.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| label: tbl-table3
+#| tbl-cap: Peak Day for Each Year Based on Total Sales
+
+#### Peak Day Analysis ####
+# Summarize total sales for each day
+daily_sales <- validated_data %>%
+  group_by(year, date) %>%
+  summarize(total_sales = sum(total_sales), .groups = "drop")
+
+# Find the day with the most sales for each year
+peak_days <- daily_sales %>%
+  group_by(year) %>%
+  filter(total_sales == max(total_sales)) %>%
+  ungroup()
+
+# Output the result as a knitr table
+peak_days %>%
+  arrange(year) %>%
+  kable(col.names = c("Year", "Peak Day", "Total Sales"), 
+        caption = "Peak Day for Each Year Based on Total Sales")
+```
 
 
-# Discussion
+# Discussion {#sec-disc}
 
 ## First discussion point {#sec-first-point}
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-## Third discussion point
+1. Seasonal Peaks: The analysis confirms that ferry ticket sales are highest during the summer months, as expected. This seasonal demand corresponds to increased tourism and recreational visits to the Toronto Islands.
+2. Peak Times: The busiest hours of the day occur between late morning and early afternoon, with a secondary peak in the late afternoon. These insights can guide ferry scheduling to minimize congestion and improve service during high-demand hours.
+3. Day-of-Week Trends: Weekends see the highest ferry traffic, which calls for operational adjustments during these periods to handle increased passenger loads.
+4. Peak Day Analysis: The peak day analysis reveals that the busiest ferry days are typically aligned with holidays, long weekends, or special summer events. This provides clear guidance for ferry operations to plan for surge capacity during these specific times.
 
 ## Weaknesses and next steps
 
 Weaknesses and next steps should also be included.
+One limitation of the analysis is the absence of detailed weather data, which could potentially influence daily ferry usage. Future research could integrate weather patterns to further refine the analysis. Additionally, incorporating demographic data of ferry passengers could offer more insights into passenger behavior and preferences.
+
+Another potential next step would be to explore predictive modeling to forecast future ferry demand based on historical data, combined with external factors such as event schedules, weather forecasts, and holidays. Such predictive models could allow the ferry operators to better anticipate high-traffic days and ensure adequate resources and staffing are available.
 
 \newpage
 
@@ -161,55 +266,6 @@ Weaknesses and next steps should also be included.
 # Additional data details
 
 # Model details {#sec-model-details}
-
-## Posterior predictive check
-
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
-
-## Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
-
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
-
 
 
 \newpage
