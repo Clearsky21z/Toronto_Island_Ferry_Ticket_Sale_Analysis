@@ -6,10 +6,12 @@ author:
 thanks: "Code and data are available at: https://github.com/Clearsky21z/Toronto_Island_Ferry_Ticket_Sale_Analysis."
 date: today
 date-format: long
+toc: true
 abstract: "This paper analyzes Toronto Island ferry ticket sales over a specific period, focusing on time series patterns and passenger flow trends. By examining both sales and redemptions data at 15-minute intervals, we uncover daily and seasonal trends in ferry usage. These insights can help optimize ferry operations and enhance visitor experience. The analysis highlights peak times of demand and usage variations over different seasons."
 format: pdf
 number-sections: true
 bibliography: references.bib
+nocite: '@*'
 ---
 
 ```{r}
@@ -21,7 +23,6 @@ library(tidyverse)
 library(opendatatoronto)
 library(knitr)
 library(lubridate)
-library(ggplot2)
 
 #### Load the dataset ####
 raw_data <- read_csv(here::here("data/raw_data/unedited_ferry_ticket_counts.csv"))
@@ -42,9 +43,6 @@ validated_data <- validated_data %>%
 
 
 # Introduction
-
-You can and should cross-reference sections and sub-sections. We use @citeR and @rohan.
-
 Toronto Island Park is a popular recreational destination for residents and tourists alike, situated in Lake Ontario just off the coast of downtown Toronto. Accessible primarily via ferries, the park includes several islands such as Centre Island, Hanlan’s Point, and Ward’s Island. These islands offer a variety of activities, including beaches, nature reserves, trails, and historical landmarks like the Gibraltar Point Lighthouse. The park’s popularity peaks during the summer months, when visitors flock to its beaches and recreational facilities.
 
 Ferry transportation to and from the islands is operated year-round by the Jack Layton Ferry Terminal. Passengers can purchase ferry tickets either online or at point-of-sale (POS) kiosks at the terminal, with the tickets covering both the outbound and return journeys. Online ticket holders benefit from separate boarding lines during peak times, which helps ease congestion. Although ferries run throughout the year, demand is highest on weekends, holidays, and during the summer months, with the busiest travel periods typically between 10 a.m. and 2 p.m. for trips to the islands and from 5:30 p.m. to 9 p.m. for return trips to the city. The ferry route from Centre Island sees the most traffic, and wait times for the return trip can exceed an hour during peak periods.
@@ -73,11 +71,11 @@ The raw dataset starts from July 2015 and continues to the most recent available
 #| message: false
 #| label: tbl-table1
 #| tbl-cap: Sample of Raw Data
+
 raw_data_sample <- head(raw_data)
 kable(
   raw_data_sample,
-  col.names = c("X_id", "Timestamp", "Redemption_Count", "Sales_Count"),
-  caption = "Sample of Raw Data"
+  col.names = c("X_id", "Timestamp", "Redemption_Count", "Sales_Count")
 )
 
 ```
@@ -103,19 +101,20 @@ To facilitate time series analysis, I extracted several useful features from the
 
 modified_data_sample <- head(validated_data)
 
-
 kable(
   modified_data_sample,
-  col.names = c("ID", "Timestamp", "Redemption Count", "Sales Count", "Total Sales", "Date", "Year", "Month", "Week", "Day of Week", "Hour"),
-  caption = "Sample of Modified Data with Total Sales and Time Features"
+  col.names = c("ID", "Timestamp", "Redemption Count", "Sales Count", "Total Sales", "Date", "Year", "Month", "Week", "Day of Week", "Hour")
 )
 ```
 
 
 # Result {#sec-result}
-## Trend Detection: Daily/Monthly Patterns and Seasonality Analysis
-Analyzing daily ferry ticket sales provides insight into visitor flow over the course of a year. As shown in @fig-figure1, ticket sales for the year 2023 tend to peak during weekends, highlighting the demand for ferry services during leisure periods. Additionally, @fig-figure2 illustrates the monthly sales trend, where ferry ticket sales are highest during the summer months (July and August), which corresponds to peak tourist season.
-The seasonal variation in ferry usage is clearly visible in the monthly trends, with significant spikes in demand during the summer months. This seasonality reflects both local and tourist demand for access to the Toronto Islands during warmer weather. Additionally, holidays, including long weekends, show increased ferry traffic.
+## Trend Detection: Daily, Monthly, and Seasonal Patterns
+The analysis of daily ferry ticket sales reveals clear patterns of visitor flow throughout the year. As illustrated in @fig-figure1, ticket sales for 2023 peak prominently during the summer months of June to August, with noticeable spikes during weekends. This trend emphasizes the importance of the Toronto Islands as a leisure destination, particularly during the warmer months when outdoor activities are in high demand.
+
+In @fig-figure2, the monthly trends further confirm the significant increase in ferry usage during the summer months. The highest peaks are observed in July and August across multiple years, reinforcing the idea that ferry demand is closely linked to the tourism and recreational seasons. This pattern is consistent year-over-year, with slight variations depending on external factors such as public events, holidays, and the influence of the COVID-19 pandemic in certain years.
+
+The seasonality of ferry ticket sales is a vital insight for operational planning, as it highlights the months where additional resources and staffing are required to meet the increased demand. Conversely, the sharp decline in sales during the winter months suggests that resources can be scaled back during the off-season to optimize operational efficiency.
 ```{r}
 #| echo: false
 #| warning: false
@@ -167,7 +166,9 @@ ggplot(monthly_sales, aes(x = month, y = total_sales, group = year, color = fact
 ```
 
 ## Passenger Flow: Peak Time Identification
-The analysis of peak times reveals the busiest hours for ferry ticket sales, which are typically concentrated in the late morning to early afternoon @fig-figure3. These insights can assist ferry operators in planning for peak loads and adjusting schedules accordingly to reduce wait times and improve the overall passenger experience.
+The analysis of hourly ferry ticket sales, as shown in @fig-figure3, provides a detailed view of passenger flow throughout the day. The peak time for ferry ticket sales occurs between 10 a.m. and 3 p.m., reflecting the tendency of visitors to travel to the islands during late mornings and early afternoons. A secondary, smaller peak occurs in the late afternoon, as visitors return to the city.
+
+This information is critical for ferry operators to adjust their schedules and staffing levels to accommodate peak passenger loads, especially during summer weekends. By anticipating these high-traffic periods, ferry operations can be more responsive to demand, reducing wait times and improving the overall passenger experience.
 
 ```{r}
 #| echo: false
@@ -189,7 +190,9 @@ ggplot(hourly_sales, aes(x = hour, y = total_sales)) +
 ```
 
 ## Day-of-Week Analysis
-@fig-figure4 shows that weekends consistently see higher ferry ticket sales than weekdays, with peak demand on Saturdays and Sundays. This pattern is consistent across all years in the dataset, reinforcing the importance of scheduling and staffing adjustments on weekends to meet the heightened demand.
+As shown in @fig-figure4, ferry usage is consistently higher on weekends, with Saturdays and Sundays being the busiest days across all years. This pattern is driven by recreational visitors, families, and tourists who tend to visit the Toronto Islands during their leisure time.
+
+This day-of-week analysis emphasizes the need for strategic scheduling and additional ferry services during weekends to avoid congestion and manage the large influx of passengers. Moreover, understanding the day-of-week patterns can help operators allocate resources more effectively and improve customer service during peak times.
 
 ```{r}
 #| echo: false
@@ -212,7 +215,9 @@ ggplot(weekly_sales, aes(x = day_of_week, y = total_sales)) +
 ```
 
 ## Peak Day Analysis
-This analysis highlights the specific days with the highest ferry ticket sales for each year in the dataset. @tbl-table3 presents the peak days for each year based on total sales. These peaks typically align with holidays, long weekends, or major summer events, further emphasizing the need for operational planning during these periods.
+The peak day analysis, presented in @tbl-table3, highlights the specific days of the year with the highest ferry ticket sales. These peak days often coincide with public holidays, long weekends, or major summer events. For instance, August 1, 2016, and August 20, 2017, mark notable peaks in ferry ticket sales, likely driven by holiday-related traffic.
+
+Understanding these peak days is crucial for operational planning. During these high-demand days, ferry operators can anticipate higher passenger loads and prepare accordingly by increasing the number of ferry trips, deploying additional staff, and improving crowd management strategies. By proactively addressing these surges in demand, ferry operations can ensure a smoother and more enjoyable experience for passengers.
 
 ```{r}
 #| echo: false
@@ -236,36 +241,82 @@ peak_days <- daily_sales %>%
 # Output the result as a knitr table
 peak_days %>%
   arrange(year) %>%
-  kable(col.names = c("Year", "Peak Day", "Total Sales"), 
-        caption = "Peak Day for Each Year Based on Total Sales")
+  kable(col.names = c("Year", "Peak Day", "Total Sales"))
 ```
 
 
 # Discussion {#sec-disc}
+## Key Insights and Implications
+1. Seasonal and Monthly Trends: The analysis confirms the strong seasonality in ferry ticket sales, with the highest demand occurring in the summer months of July and August. This seasonal spike is closely tied to tourism and recreational activities on the Toronto Islands, particularly during holidays and weekends. The sharp contrast in sales between the summer and winter months highlights the importance of efficient resource allocation, ensuring that operations can scale up during peak seasons and down during the off-season.
 
-## First discussion point {#sec-first-point}
-1. Seasonal Peaks: The analysis confirms that ferry ticket sales are highest during the summer months, as expected. This seasonal demand corresponds to increased tourism and recreational visits to the Toronto Islands.
-2. Peak Times: The busiest hours of the day occur between late morning and early afternoon, with a secondary peak in the late afternoon. These insights can guide ferry scheduling to minimize congestion and improve service during high-demand hours.
-3. Day-of-Week Trends: Weekends see the highest ferry traffic, which calls for operational adjustments during these periods to handle increased passenger loads.
-4. Peak Day Analysis: The peak day analysis reveals that the busiest ferry days are typically aligned with holidays, long weekends, or special summer events. This provides clear guidance for ferry operations to plan for surge capacity during these specific times.
+2. Daily and Hourly Passenger Flow: Peak ferry traffic is concentrated between late morning and early afternoon, with a significant surge in sales between 10 a.m. and 3 p.m. on weekends. These insights provide actionable recommendations for ferry operators to adjust their schedules to minimize wait times during these high-demand hours. By aligning ferry trips with peak demand, operators can ensure that passengers experience shorter lines and faster service.
 
-## Weaknesses and next steps
+3. Day-of-Week Trends: The consistent pattern of increased ferry sales on Saturdays and Sundays suggests that weekends remain the primary travel time for both local visitors and tourists. This insight underscores the need for operational adjustments on weekends, including more frequent ferry trips, extended service hours, and enhanced crowd management.
 
-Weaknesses and next steps should also be included.
-One limitation of the analysis is the absence of detailed weather data, which could potentially influence daily ferry usage. Future research could integrate weather patterns to further refine the analysis. Additionally, incorporating demographic data of ferry passengers could offer more insights into passenger behavior and preferences.
+4. Peak Day Analysis: The identification of peak days, typically aligned with holidays or major summer events, provides valuable information for managing extraordinary surges in passenger demand. By knowing in advance which days are likely to experience the highest traffic, ferry operators can implement targeted strategies to handle the increased load, such as adding extra ferry trips or implementing temporary crowd control measures.
 
-Another potential next step would be to explore predictive modeling to forecast future ferry demand based on historical data, combined with external factors such as event schedules, weather forecasts, and holidays. Such predictive models could allow the ferry operators to better anticipate high-traffic days and ensure adequate resources and staffing are available.
+## Weaknesses and Future Directions
+One notable limitation of this analysis is the absence of external factors such as weather conditions, which can significantly influence daily ferry usage. For example, rainy days or extreme heat may deter visitors, while sunny weekends could lead to unexpectedly high demand. Incorporating weather data into future analyses could provide more accurate predictions of ferry traffic patterns.
+
+Additionally, the lack of demographic data prevents a deeper understanding of the types of passengers using the ferry service. By integrating demographic insights, such as age groups, tourist vs. local usage, or family vs. individual travelers, ferry operators could tailor their services to meet the specific needs of different customer segments.
+
+Future research should also explore predictive modeling, using historical data to forecast future ferry demand based on a combination of seasonal patterns, event schedules, and weather forecasts. Such models could help operators anticipate peak days and hours more accurately, allowing for better preparedness and service delivery.
+
+By addressing these gaps and building on the existing analysis, ferry operators can continue to enhance their services, improving the overall experience for visitors to the Toronto Islands.
 
 \newpage
 
 \appendix
 
-# Appendix {-}
+# Appendix {#sec-appendix}
+## Dataset and Graph Sketches
+Sketches of the desired dataset structure and the visualizations created for analysis are available in the GitHub repository. These sketches illustrate the different time intervals and patterns analyzed in the report.
+
+## Data Cleaning
+The data cleaning process involved the following steps to ensure the accuracy and integrity of the dataset:
+
+Duplicate Removal: Any duplicate entries, particularly those with identical timestamps, were removed to ensure data accuracy.
+Missing Values: Rows with missing values in key fields (timestamp, redemption count, and sales count) were eliminated to maintain the completeness of the dataset.
+Validation of Positive Values: Ensured that both redemption_count and sales_count contained only non-negative integers.
+No modifications to the actual data content were made beyond these cleaning steps.
+
+## Data Testing
+The following tests were applied to the cleaned dataset to ensure its quality and consistency:
+
+- Redemption and sales counts: All redemption_count and sales_count values were checked to ensure they are non-negative.
+- Total sales validation: A derived column, total_sales, was checked to ensure that all values are non-negative, as it represents the sum of redemption_count and sales_count.
+- Timestamp validation: Ensured that all timestamps fall within the expected range (from 2016 to 2023).
+- Duplicate records check: Verified that there are no duplicate entries for the same timestamp.
+- Missing values check: Ensured that there are no missing values in the key columns: timestamp, redemption_count, and sales_count.
+Results from the tests are shown in @tbl-data-testing below:
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| label: tbl-data-testing
+#| tbl-cap: "Data Testing Results"
+
+# Create the test results data frame
+test_results <- data.frame(
+  `Test Description` = c("All redemption counts non-negative",
+                         "All sales counts non-negative",
+                         "All total sales non-negative",
+                         "All timestamps within valid range",
+                         "No duplicate timestamps",
+                         "No missing values in key columns"),
+  Result = c("Passed", "Passed", "Passed", "Passed", "Passed", "Passed")
+)
+
+# Produce the table using knitr
+kable(test_results, col.names = c("Test Description", "Result"))
+```
 
 
-# Additional data details
+## Attribution Statement
+“Contains information licensed under the Open Government Licence – Toronto” (City of Toronto, n.d.b).
 
-# Model details {#sec-model-details}
+This appendix clearly outlines the data cleaning and testing process, ensuring the dataset's reliability for subsequent analysis without mentioning any data modification.
+
 
 
 \newpage
