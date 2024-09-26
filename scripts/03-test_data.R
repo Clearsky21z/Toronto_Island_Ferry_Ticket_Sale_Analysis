@@ -13,8 +13,22 @@ library(lubridate)
 
 #### Load cleaned data ####
 cleaned_data <- read_csv("data/analysis_data/cleaned_ferry_ticket_counts.csv")
+simulated_data <- read_csv("data/raw_data/simulated_ferry_ticket_sales.csv")
 
-#### Test data ####
+#### Basic tests for Simulated Data ####
+# Ensure that Redemption_Count and Sales_Count are non-negative integers
+test_redemption_positive <- all(simulated_data$Redemption_Count >= 0)
+test_sales_positive <- all(simulated_data$Sales_Count >= 0)
+
+# Ensure timestamps are within the correct range
+test_timestamps_range <- all(simulated_data$timestamp >= start_time & simulated_data$timestamp <= end_time)
+
+# Print test results
+print(paste("All redemption counts non-negative:", test_redemption_positive))
+print(paste("All sales counts non-negative:", test_sales_positive))
+print(paste("All timestamps within range:", test_timestamps_range))
+
+#### Updated Test for Testing data ####
 
 # Test 1: Ensure that "redemption_count" and "sales_count" are non-negative integers
 test_redemption_positive <- all(cleaned_data$redemption_count >= 0)
