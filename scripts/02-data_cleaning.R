@@ -1,11 +1,12 @@
 #### Preamble ####
-# Purpose: Cleans the raw plane data recorded by two observers..... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 6 April 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Cleans the raw ferry ticket data and prepares it for analysis by standardizing the columns, filtering for relevant date range, and adding a total sales column.
+# Author: John Zhang
+# Date: September 2024
+# Contact: junhan.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: The raw dataset "unedited_ferry_ticket_counts.csv" should be available in the "data/raw_data" folder.
+# Any other information needed? None
+
 
 #### Workspace setup ####
 library(tidyverse)
@@ -21,7 +22,8 @@ cleaned_data <- raw_data |>
   select(x_id, timestamp, redemption_count, sales_count) |>  # Select relevant columns based on correct names
   mutate(timestamp = as_datetime(timestamp)) |>  # Convert timestamp to datetime format
   filter(year(timestamp) >= 2016 & year(timestamp) <= 2023) |>  # Filter rows between 2016-2023
-  mutate(total_sales = redemption_count + sales_count) |>  # Create new column for total sales
+  mutate(total_sales = redemption_count + sales_count) |> # Create new column for total sales
+  mutate(x_id = row_number()) |>  # Ensure x_id starts from 1 and is continuous
   drop_na()  # Drop rows with missing values
 
 #### Save cleaned data ####
