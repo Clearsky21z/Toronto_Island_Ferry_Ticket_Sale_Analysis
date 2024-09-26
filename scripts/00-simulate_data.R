@@ -39,21 +39,5 @@ simulated_data <- tibble(
   Sales_Count = sales_count
 )
 
-# View simulated data
-print(head(simulated_data))
-
-#### Basic tests ####
-# Ensure that Redemption_Count and Sales_Count are non-negative integers
-test_redemption_positive <- all(simulated_data$Redemption_Count >= 0)
-test_sales_positive <- all(simulated_data$Sales_Count >= 0)
-
-# Ensure timestamps are within the correct range
-test_timestamps_range <- all(simulated_data$timestamp >= start_time & simulated_data$timestamp <= end_time)
-
-# Print test results
-print(paste("All redemption counts non-negative:", test_redemption_positive))
-print(paste("All sales counts non-negative:", test_sales_positive))
-print(paste("All timestamps within range:", test_timestamps_range))
-
 # Save simulated data to CSV for later use
-write_csv(simulated_data, "data/simulated_ferry_ticket_sales.csv")
+write_csv(simulated_data, "data/raw_data/simulated_ferry_ticket_sales.csv")
