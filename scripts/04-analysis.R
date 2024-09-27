@@ -56,9 +56,11 @@ monthly_sales <- validated_data %>%
 ggplot(monthly_sales, aes(x = month, y = total_sales, group = year, color = factor(year))) +
   geom_line(size = 1) +
   theme_minimal() +
-  labs(title = "Monthly Trends in Ferry Ticket Sales",
-       x = "Month",
-       y = "Total Sales") +
+  labs(
+    title = "Monthly Trends in Ferry Ticket Sales",
+    x = "Month",
+    y = "Total Sales"
+  ) +
   scale_color_brewer(palette = "Set1", name = "Year")
 
 #### Hourly Sales (Peak Time Identification) ####
@@ -100,5 +102,21 @@ peak_days <- daily_sales %>%
 # Output the result as a knitr table
 peak_days %>%
   arrange(year) %>%
-  kable(col.names = c("Year", "Peak Day", "Total Sales"), 
-        caption = "Peak Day for Each Year Based on Total Sales")
+  kable(
+    col.names = c("Year", "Peak Day", "Total Sales"),
+    caption = "Peak Day for Each Year Based on Total Sales"
+  )
+
+#### Find the Top 5 Timestamps with the Highest Total Sales ####
+# Sort the data by total_sales in descending order and select the top 5 rows
+top_5_timestamps <- validated_data %>%
+  arrange(desc(total_sales)) %>%
+  slice(1:5)
+
+# Output the result as a knitr table
+top_5_timestamps %>%
+  select(timestamp, total_sales) %>%
+  kable(
+    col.names = c("Timestamp", "Total Sales"),
+    caption = "Top 5 Timestamps with the Highest Total Sales"
+  )

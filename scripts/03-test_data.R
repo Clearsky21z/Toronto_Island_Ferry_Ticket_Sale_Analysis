@@ -4,14 +4,14 @@
 # Date: September 2024
 # Contact: junhan.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The cleaned dataset "cleaned_ferry_ticket_counts.csv" should be available
+# Pre-requisites: The simulated dataset "simulated_ferry_ticket_sales.csv" and the cleaned dataset "cleaned_ferry_ticket_counts.csv" should be available
 # Any other information needed? None
 
 #### Workspace setup ####
 library(tidyverse)
 library(lubridate)
 
-#### Load cleaned data ####
+#### Load cleaned and simulated data ####
 cleaned_data <- read_csv("data/analysis_data/cleaned_ferry_ticket_counts.csv")
 simulated_data <- read_csv("data/raw_data/simulated_ferry_ticket_sales.csv")
 
